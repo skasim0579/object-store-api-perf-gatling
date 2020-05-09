@@ -36,7 +36,7 @@ class FileUploadDownloadSimulation extends Simulation {
         .bodyPart(RawFileBodyPart("file", "example-png.png").contentType("image/png").fileName("example-png.png")).asMultipartForm
         .check(status.is(200))
         .check(jsonPath("$.fileIdentifier").saveAs("fileIdentifier")))
-      .exec { session => println(session); session }
+      .exec { session => println("fileIdentifier: " + session("fileIdentifier").as[String]); session }
 
   setUp(scn.inject(atOnceUsers(1)).protocols(httpProtocol))
 }
