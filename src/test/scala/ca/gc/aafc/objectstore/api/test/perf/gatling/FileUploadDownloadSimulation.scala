@@ -12,6 +12,7 @@ import scala.io.Source
 import java.io.BufferedReader
 import scala.io.Source.fromURL
 import java.io.File
+import java.io._
 
 class FileUploadDownloadSimulation extends Simulation {
   var fileId: String = null;
@@ -35,6 +36,9 @@ class FileUploadDownloadSimulation extends Simulation {
       jsonFileInStr = jsonFileInStr.replaceFirst("bucket1", bucket)
       jsonFileInStr = jsonFileInStr.replaceFirst("fileIdentifier1", fileId)
       println("jsonFileInStr: " + jsonFileInStr)
+      val pw = new PrintWriter(new File("metadata2.json"))
+      pw.write(jsonFileInStr)
+      pw.close
     }
   }
 
@@ -52,34 +56,37 @@ class FileUploadDownloadSimulation extends Simulation {
   def serverPort: String = getProperty("server.port", "8081")
   println("serverHost: " + serverHost)
   println("serverPort: " + serverPort)
-//  var fileIdentifier: String = "8809ed21-d5ef-4cb2-b51a-9a60ae09a89e"
-//  saveFileId(fileIdentifier)
+//    var fileIdentifier: String = "8809ed21-d5ef-4cb2-b51a-9a60ae09a89e"
+//    saveFileId(fileIdentifier)
 
-    val httpProtocol = http
-      .baseUrl("http://" + serverHost + ":" + serverPort) // Here is the root for all relative URLs
-  
-    val scn =
-      scenario("post-fileUploadDownload") // A scenario is a chain of requests and pauses
-        .exec(http("Post-FileUpload")
-          .post("/api/v1/file/" + bucket)
-          .header("Content-Type", "image/png")
-          .bodyPart(RawFileBodyPart("file", "example-png.png").contentType("image/png").fileName("example-png.png")).asMultipartForm
-          .check(status.is(200))
-          .check(jsonPath("$.fileIdentifier").saveAs("fileIdentifier")))
-        .exec { session => saveFileId(session("fileIdentifier").as[String]); session }
-  
-        .exec(http("Post-metadata")
-          .post("/api/metadata")
-          .header(HttpHeaderNames.ContentType, "application/vnd.api+json")
-          .header(HttpHeaderNames.Accept, "application/vnd.api+json")
-          .body(StringBody(jsonFileInStr)).asJson
-          .check(status.is(200)))
-  
-        .exec(http("Get-fileDownload")
-          .get("/api/v1/file/" + bucket + "/" + fileId)
-          .check(status.is(200))
-          .check(bodyString.saveAs("responseBody")))
-        .exec { session => writeToFile(session("responseBody").as[String]); session }
-  
-    setUp(scn.inject(atOnceUsers(1)).protocols(httpProtocol))
+  val httpProtocol = http
+    .baseUrl("http://" + serverHost + ":" + serverPort) // Here is the root for all relative URLs
+
+  val scn =
+    scenario("post-fileUploadDownload") // A scenario is a chain of requests and pauses
+      // -----------------------------
+      .exec(http("Post-FileUpload")
+        .post("/api/v1/file/" + bucket)
+        .header("Content-Type", "image/png")
+        .bodyPart(RawFileBodyPart("file", "example-png.png").contentType("image/png").fileName("example-png.png")).asMultipartForm
+        .check(status.is(200))
+        .check(jsonPath("$.fileIdentifier").saveAs("fileIdentifier")))
+      .exec { session => saveFileId(session("fileIdentifier").as[String]); session }
+      // -----------------------------
+      .exec(http("Post-metadata")
+        .post("/api/v1/metadata")
+        .header(HttpHeaderNames.ContentType, "application/vnd.api+json")
+        .header(HttpHeaderNames.Accept, "application/vnd.api+json")
+        .body(RawFileBody("./metadata2.json"))
+        .check(status.is(201))
+        .check(bodyString.saveAs("responseData2")))
+      .exec { session => println("metadata-responseData: " + session("responseData2").as[String]); session }
+  // -----------------------------
+  //        .exec(http("Get-fileDownload")
+  //          .get("/api/v1/file/" + bucket + "/" + fileId)
+  //          .check(status.is(200))
+  //          .check(bodyString.saveAs("responseBody")))
+  //        .exec { session => writeToFile(session("responseBody").as[String]); session }
+
+  setUp(scn.inject(atOnceUsers(1)).protocols(httpProtocol))
 }
