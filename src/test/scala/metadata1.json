@@ -2,10 +2,10 @@
   "data": {
     "type": "metadata",
     "attributes": {
-      "bucket": "bucket1",
+      "bucket": "${bucket1}",
       "dcType": "Image",
       "fileExtension": ".png",
-      "fileIdentifier": "fileIdentifier1"
+      "fileIdentifier": "${fileId1}"
     }
   }
 }
