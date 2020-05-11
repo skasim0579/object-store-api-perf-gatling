@@ -8,7 +8,7 @@ import scala.io.Source
 import java.io.BufferedReader
 import scala.io.Source.fromURL
 
-class BasicSimulation extends Simulation {
+class ManagedAttributeSimulation extends Simulation {
   private def getProperty(propertyName: String, defaultValue: String) = {
     Option(System.getenv(propertyName))
       .orElse(Option(System.getProperty(propertyName)))
@@ -17,15 +17,6 @@ class BasicSimulation extends Simulation {
 
   def serverHost: String = getProperty("server.host", "localhost")
   def serverPort: String = getProperty("server.port", "8081")
-  //  val url = getClass.getResource("/server.properties")
-  //  val properties: Properties = new Properties()
-  //
-  //  if (url != null) {
-  //    val source = Source.fromURL(url)
-  //    properties.load(source.bufferedReader())
-  //  }
-  //  val serverHost = properties.getProperty("server.host")
-  //  val serverPort = properties.getProperty("server.port")
   println("serverHost: " + serverHost)
   println("serverPort: " + serverPort)
   val httpProtocol = http
